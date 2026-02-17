@@ -1,5 +1,5 @@
 import math
-
+from papka.components.input_fields import *
 # глобальные параметры (используются внутри функций через global)
 R3 = 6378.0  # Радиус Земли
 H = 35810.0  # Высота орбиты
