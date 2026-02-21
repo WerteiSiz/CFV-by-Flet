@@ -2,16 +2,21 @@ import flet as ft
 import math
 from papka.components.calculations import ygol_mesta, azimut, dalnost,poteri,factorG,atmosphere
 from papka.components.ml import load_model,predict_diameter
-from papka.components.constants import R3, H, COLORS
+from papka.components.constants import R3, H, COLORS, footer
 from papka.components.save_functions import *
 from papka.components.input_fields import *
+from papka.components.buttons import *
+from papka.pages.energy_uplink import show_results_energy_uplink
+from components.earth_visualization import EarthVisualization
+
+
 try:
     from pages.positioning import show as show_positioning
     from pages.energy_uplink import show as show_energy_uplink
     from pages.energy_downlink import show as show_energy_downlink
     from pages.desicion_support import show as show_desicion_support
 except ImportError:
-    def show_positioning(container, page, gradys_d_input, gradys_sh_input, tochka_input, buttons_row):
+    def show_positioning(container, page, inputs  ,buttons_row):
         container.controls.append(
             ft.Container(
                 margin=10,
@@ -42,9 +47,9 @@ except ImportError:
                     content=ft.Column([
                         ft.ResponsiveRow(
                             [
-                                ft.Container(gradys_d_input, padding=15, col={"sm": 12, "md": 4}),
-                                ft.Container(gradys_sh_input, padding=15, col={"sm": 12, "md": 4}),
-                                ft.Container(tochka_input, padding=15, col={"sm": 12, "md": 4}),
+                                ft.Container(inputs.gradys_d, padding=15, col={"sm": 12, "md": 4}),
+                                ft.Container(inputs.gradys_sh, padding=15, col={"sm": 12, "md": 4}),
+                                ft.Container(inputs.tochka, padding=15, col={"sm": 12, "md": 4}),
                             ],
                             spacing=20,
                             run_spacing={"xs": 10, "sm": 15, "md": 20},
@@ -60,184 +65,139 @@ except ImportError:
                 margin=ft.margin.only(bottom=30),
             )
         )
-    def show_energy_uplink(container, page):
-        container.controls.append(ft.Text("ЗС-ИЗС (раздел в разработке)", color="gray"))
-    def show_energy_downlink(container, page):
-        container.controls.append(ft.Text("ИЗС-ЗС (раздел в разработке)", color="gray"))
+
+    def show_energy_uplink(
+            container, page, inputs  ,buttons_row1):
+        container.controls.append(
+            ft.Container(
+                margin=10,
+                content=ft.Text(
+                    "Энергетический расчет (ЗС-ИЗС)",
+                    size=30,
+                    weight=ft.FontWeight.BOLD,
+                    text_align=ft.TextAlign.LEFT,
+                ),
+                alignment=ft.alignment.top_left,
+            )
+        )
+
+        container.controls.append(
+            ft.Container(
+                content=ft.Text(
+                    "Расчет параметров линии связи вверх от земной станции к спутнику",
+                    size=16,
+                    text_align=ft.TextAlign.LEFT,
+                ),
+                alignment=ft.alignment.top_left,
+            )
+        )
+
+        container.controls.append(
+            ft.Card(
+                content=ft.Container(
+                    padding=20,
+                    border=ft.border.all(1, COLORS["purple_blue"]),
+                    border_radius=8,
+                    content=ft.Column(
+                        spacing=20,
+                        controls=[
+                            ft.ResponsiveRow(
+                                [
+                                    ft.Container(inputs.gradys_d, padding=15, col={"sm": 12, "md": 4}),
+                                    ft.Container(inputs.gradys_sh, padding=15, col={"sm": 12, "md": 4}),
+                                    ft.Container(inputs.tochka, padding=15, col={"sm": 12, "md": 4}),
+                                    ft.Container(inputs.chastota, padding=15, col={"sm": 12, "md": 4}),
+                                    ft.Container(inputs.diametr, padding=15, col={"sm": 12, "md": 4}),
+                                    ft.Container(inputs.k, padding=15, col={"sm": 12, "md": 4}),
+                                    ft.Container(inputs.P, padding=15, col={"sm": 12, "md": 4}),
+                                    ft.Container(inputs.T, padding=15, col={"sm": 12, "md": 4}),
+                                    ft.Container(inputs.p, padding=15, col={"sm": 12, "md": 4}),
+                                ],
+                                spacing=20,
+                                run_spacing={"xs": 10, "sm": 15, "md": 20},
+                            ),
+                            buttons_row1,
+                        ],
+                    ),
+                ),
+                elevation=8,
+                color=COLORS["white"],
+                margin=ft.margin.only(bottom=30),
+            )
+        )
+
+        page.update()
+    def show_energy_downlink( container, page, inputs  ,buttons_row1,EarthVisualization):
+        container.controls.append(
+            ft.Container(
+                margin=10,
+                content=ft.Text(
+                    "Энергетический расчет (ЗС-ИЗС)",
+                    size=30,
+                    weight=ft.FontWeight.BOLD,
+                    text_align=ft.TextAlign.LEFT,
+                ),
+                alignment=ft.alignment.top_left,
+            )
+        )
+
+        container.controls.append(
+            ft.Container(
+                content=ft.Text(
+                    "Расчет параметров линии связи вверх от земной станции к спутнику",
+                    size=16,
+                    text_align=ft.TextAlign.LEFT,
+                ),
+                alignment=ft.alignment.top_left,
+            )
+        )
+
+        container.controls.append(
+            ft.Card(
+                content=ft.Container(
+                    padding=20,
+                    border=ft.border.all(1, COLORS["purple_blue"]),
+                    border_radius=8,
+                    content=ft.Column(
+                        spacing=20,
+                        controls=[
+                            ft.ResponsiveRow(
+                                [
+                                    ft.Container(inputs.gradys_d, padding=15, col={"sm": 12, "md": 4}),
+                                    ft.Container(inputs.gradys_sh, padding=15, col={"sm": 12, "md": 4}),
+                                    ft.Container(inputs.tochka, padding=15, col={"sm": 12, "md": 4}),
+                                    ft.Container(inputs.chastota, padding=15, col={"sm": 12, "md": 4}),
+                                    ft.Container(inputs.diametr, padding=15, col={"sm": 12, "md": 4}),
+                                    ft.Container(inputs.k, padding=15, col={"sm": 12, "md": 4}),
+                                    ft.Container(inputs.P, padding=15, col={"sm": 12, "md": 4}),
+                                    ft.Container(inputs.T, padding=15, col={"sm": 12, "md": 4}),
+                                    ft.Container(inputs.p, padding=15, col={"sm": 12, "md": 4}),
+                                ],
+                                spacing=20,
+                                run_spacing={"xs": 10, "sm": 15, "md": 20},
+                            ),
+                            buttons_row1,
+                        ],
+                    ),
+                ),
+                elevation=8,
+                color=COLORS["white"],
+                margin=ft.margin.only(bottom=30),
+            )
+        )
+
+        page.update()
     def show_desicion_support(container, page):
         container.controls.append(ft.Text("СППР (раздел в разработке)", color="gray"))
-
-
-
-def show_results_positioning(container, gradys_d_input, gradys_sh_input, tochka_input, page):
-    try:
-        d = float(gradys_d_input.value)
-        sh = float(gradys_sh_input.value)
-        t = float(tochka_input.value)
-        angle = ygol_mesta(d, sh, t)
-        az = azimut(d, sh, t)
-        dist = dalnost(d, sh, t)
-    except Exception as ex:
-        page.show_snack_bar(ft.SnackBar(content=ft.Text(f"Ошибка: {ex}"), duration=3000))
-        return
-
-    if hasattr(container, 'last_result') and container.last_result:
-        container.controls.remove(container.last_result)
-
-    result_container = ft.Container(
-        content=ft.Column([
-            ft.ResponsiveRow(
-                [
-                    ft.Text("Результаты расчета", size=32, weight=ft.FontWeight.BOLD ,color=COLORS["purple_blue"],text_align=ft.TextAlign.LEFT),
-                    ft.Container(
-                        content=ft.Column(
-                            [
-                                ft.Text("Угол места", size=16, color=COLORS["graphit"],text_align=ft.TextAlign.LEFT),
-                                ft.Text(f"{angle:.2f}°", size=24,text_align=ft.TextAlign.LEFT, weight=ft.FontWeight.BOLD,
-                                        color=COLORS["purple_blue"]),
-
-                            ],
-                            horizontal_alignment=ft.CrossAxisAlignment.START,
-                            spacing=5,
-                        ),
-                        padding=15,
-                        col={"sm": 12, "md": 4},
-                        bgcolor=COLORS["white"],
-                        border_radius=12,
-                        width=180,
-                        height=100,
-
-                    ),
-                    ft.Container(
-                        content=ft.Column(
-                            [
-                                ft.Text("Азимут", size=16, color=COLORS["graphit"],text_align=ft.TextAlign.LEFT),
-                                ft.Text(f"{az:.2f}°", size=24, weight=ft.FontWeight.BOLD, text_align=ft.TextAlign.LEFT,color=COLORS["blue"]),
-                            ],
-                            horizontal_alignment=ft.CrossAxisAlignment.START,
-                            spacing=5,
-                        ),
-                        padding=15,
-                        col={"sm": 12, "md": 4},
-                        bgcolor=COLORS["white"],
-                        border_radius=12,
-                        width=180,
-                        height=100,
-                    ),
-                    ft.Container(
-                        content=ft.Column(
-                            [
-                                ft.Text("Наклонная дальность", size=16, color=COLORS["graphit"],text_align=ft.TextAlign.LEFT),
-                                ft.Text(f"{dist:.2f} км", size=24, weight=ft.FontWeight.BOLD, text_align=ft.TextAlign.LEFT,
-                                        color=COLORS["light_blue"]),
-                            ],
-                            horizontal_alignment=ft.CrossAxisAlignment.START,
-                            spacing=5,
-                        ),
-                        padding=15,
-                        col={"sm": 12, "md": 4},
-                        bgcolor=COLORS["white"],
-                        border_radius=12,
-                        width=180,
-                        height=100,
-                    ),
-                ],
-                spacing=20,
-                run_spacing={"xs": 10, "sm": 15, "md": 20},
-            ),
-        ], spacing=20),
-        padding=20,
-        border=ft.border.all(2, COLORS["purple_blue"]),
-        border_radius=8,
-        bgcolor=COLORS["lavanda"],
-    )
-
-    # 5. Добавляем новый результат и сохраняем ссылку на него
-    container.controls.append(result_container)
-    container.last_result = result_container  # сохраняем для удаления в следующий раз
-    page.update()
-
-# Стиль для кнопки расчёта
-calc_btn_style = ft.ButtonStyle(
-    bgcolor=COLORS["purple_blue"],
-    color=COLORS["white"],
-    shape=ft.RoundedRectangleBorder(radius=12),
-    side=ft.BorderSide(1, COLORS["purple_blue"]),
-    padding=15,
-)
-
 
 def main(page: ft.Page):
     page.scroll = ft.ScrollMode.AUTO
     page.title = "САПР VSAT"
     page.theme_mode = ft.ThemeMode.LIGHT
     page.bgcolor = COLORS["white"]
-
+    inputs = Inputs()
     # Контейнер для динамического контента
     content_area = ft.Column(expand=True, spacing=10, horizontal_alignment=ft.CrossAxisAlignment.CENTER)
-
-    calc_button = ft.ElevatedButton(
-        text="Произвести расчёты",
-        icon=ft.Icons.CALCULATE,
-        style=calc_btn_style,
-        width=200,
-        on_click=lambda e: show_results_positioning(
-            content_area, gradys_d_input, gradys_sh_input, tochka_input, page
-        )
-    )
-
-    save_button = ft.PopupMenuButton(
-        content=ft.Row(
-            [
-                ft.Icon(ft.Icons.SAVE, color=COLORS["purple_blue"]),
-                ft.Text("Сохранить", color=COLORS["purple_blue"]),
-            ],
-            spacing=5,
-            alignment=ft.MainAxisAlignment.CENTER,
-        ),
-        items=[
-            ft.PopupMenuItem(
-                content=ft.Row(
-                    [
-                        ft.Icon(ft.Icons.TEXT_SNIPPET, color=COLORS["purple_blue"]),
-                        ft.Text("Сохранить в TXT", color=COLORS["dark_purple"]),
-                    ]
-                ),
-                # on_click=lambda e: save_to_txt(),  # замените на вашу функцию
-            ),
-            ft.PopupMenuItem(
-                content=ft.Row(
-                    [
-                        ft.Icon(ft.Icons.DESCRIPTION, color=COLORS["purple_blue"]),
-                        ft.Text("Сохранить в Word", color=COLORS["dark_purple"]),
-                    ]
-                ),
-                # on_click=lambda e: save_to_word(),
-            ),
-            ft.PopupMenuItem(
-                content=ft.Row(
-                    [
-                        ft.Icon(ft.Icons.TABLE_CHART, color=COLORS["purple_blue"]),
-                        ft.Text("Сохранить в Excel", color=COLORS["dark_purple"]),
-                    ]
-                ),
-                # on_click=lambda e: save_to_excel(),
-            ),
-        ],
-        tooltip="Выберите формат сохранения",
-        style=ft.ButtonStyle(
-            shape=ft.RoundedRectangleBorder(radius=12),
-            side=ft.BorderSide(3, COLORS["purple_blue"]),  # обводка толщиной 3
-            bgcolor=ft.Colors.WHITE,
-        ),
-    )
-
-    # Ряд с кнопками
-    buttons_row = ft.Row(
-        [calc_button, save_button],
-        alignment=ft.MainAxisAlignment.CENTER,
-        spacing=30,
-    )
 
     def menu_button_style():
         return ft.ButtonStyle(
@@ -304,6 +264,127 @@ def main(page: ft.Page):
         card.on_hover = hover
 
         return card
+    #Кнопки расчетов и тд
+    calc_button = ft.ElevatedButton(
+        text="Произвести расчёты",
+        icon=ft.Icons.CALCULATE,
+        style=calc_btn_style,
+        width=200,
+        on_click=lambda e: show_results_positioning(
+            content_area, page, inputs  ,buttons_row
+        )
+    )
+
+    save_button = ft.PopupMenuButton(
+        content=ft.Row(
+            [
+                ft.Icon(ft.Icons.SAVE, color=COLORS["purple_blue"]),
+                ft.Text("Сохранить", color=COLORS["purple_blue"]),
+            ],
+            spacing=5,
+            alignment=ft.MainAxisAlignment.CENTER,
+        ),
+        items=[
+            ft.PopupMenuItem(
+                content=ft.Row(
+                    [
+                        ft.Icon(ft.Icons.TEXT_SNIPPET, color=COLORS["purple_blue"]),
+                        ft.Text("Сохранить в TXT", color=COLORS["dark_purple"]),
+                    ]
+                ),
+                # on_click=lambda e: save_to_txt(),  # замените на вашу функцию
+            ),
+            ft.PopupMenuItem(
+                content=ft.Row(
+                    [
+                        ft.Icon(ft.Icons.DESCRIPTION, color=COLORS["purple_blue"]),
+                        ft.Text("Сохранить в Word", color=COLORS["dark_purple"]),
+                    ]
+                ),
+                # on_click=lambda e: save_to_word(),
+            ),
+            ft.PopupMenuItem(
+                content=ft.Row(
+                    [
+                        ft.Icon(ft.Icons.TABLE_CHART, color=COLORS["purple_blue"]),
+                        ft.Text("Сохранить в Excel", color=COLORS["dark_purple"]),
+                    ]
+                ),
+                # on_click=lambda e: save_to_excel(),
+            ),
+        ],
+        tooltip="Выберите формат сохранения",
+        style=ft.ButtonStyle(
+            shape=ft.RoundedRectangleBorder(radius=12),
+            side=ft.BorderSide(3, COLORS["purple_blue"]),  # обводка толщиной 3
+            bgcolor=ft.Colors.WHITE,
+        ),
+    )
+    save_energy_button = ft.PopupMenuButton(
+        content=ft.Row(
+            [
+                ft.Icon(ft.Icons.SAVE, color=COLORS["purple_blue"]),
+                ft.Text("Сохранить", color=COLORS["purple_blue"]),
+            ],
+            spacing=5,
+            alignment=ft.MainAxisAlignment.CENTER,
+        ),
+        items=[
+            ft.PopupMenuItem(
+                content=ft.Row(
+                    [
+                        ft.Icon(ft.Icons.TEXT_SNIPPET, color=COLORS["purple_blue"]),
+                        ft.Text("Сохранить в TXT", color=COLORS["dark_purple"]),
+                    ]
+                ),
+                # on_click=lambda e: save_to_txt(),  # замените на вашу функцию
+            ),
+            ft.PopupMenuItem(
+                content=ft.Row(
+                    [
+                        ft.Icon(ft.Icons.DESCRIPTION, color=COLORS["purple_blue"]),
+                        ft.Text("Сохранить в Word", color=COLORS["dark_purple"]),
+                    ]
+                ),
+                # on_click=lambda e: save_to_word(),
+            ),
+            ft.PopupMenuItem(
+                content=ft.Row(
+                    [
+                        ft.Icon(ft.Icons.TABLE_CHART, color=COLORS["purple_blue"]),
+                        ft.Text("Сохранить в Excel", color=COLORS["dark_purple"]),
+                    ]
+                ),
+                # on_click=lambda e: save_to_excel(),
+            ),
+        ],
+        tooltip="Выберите формат сохранения",
+        style=ft.ButtonStyle(
+            shape=ft.RoundedRectangleBorder(radius=12),
+            side=ft.BorderSide(3, COLORS["purple_blue"]),  # обводка толщиной 3
+            bgcolor=ft.Colors.WHITE,
+        ),
+    )
+    calc_energy_button = ft.ElevatedButton(
+        text="Произвести расчёты",
+        icon=ft.Icons.CALCULATE,
+        style=calc_btn_style,
+        width=200,
+        on_click=lambda e: show_results_energy_uplink(
+            content_area, page, inputs  ,buttons_row1
+        )
+    )
+    buttons_row = ft.Row(
+        [calc_button, save_button],
+        alignment=ft.MainAxisAlignment.CENTER,
+        spacing=30,
+    )
+    buttons_row1 = ft.Row(
+        [calc_energy_button, save_energy_button],
+        alignment=ft.MainAxisAlignment.CENTER,
+        spacing=30,
+    )
+
 
     # Обработчики кликов
     def on_click_sapr(e):
@@ -333,7 +414,6 @@ def main(page: ft.Page):
                 alignment=ft.alignment.center,
             )
         )
-
        # карточки 2 на 2
         content_area.controls.append(
             ft.Column(
@@ -381,7 +461,7 @@ def main(page: ft.Page):
                         ]
                     ),
                 ]
-            )
+            ),
         )
 
         def create_feature_item(text):
@@ -411,9 +491,8 @@ def main(page: ft.Page):
             )
         )
         content_area.controls.append(
-            footer
+            footer,
         )
-
         page.update()
 
     def on_click_positioning(e):
@@ -421,26 +500,25 @@ def main(page: ft.Page):
         show_positioning(
             content_area,
             page,
-            gradys_d_input,
-            gradys_sh_input,
-            tochka_input,
-            buttons_row
+            inputs,
+            buttons_row,
         )
         page.update()
 
     def on_click_zes_izs(e):
         content_area.controls.clear()
-        show_energy_uplink(content_area, page)
+        show_energy_uplink(
+            content_area, page, inputs  ,buttons_row1
+        )
         page.update()
 
     def on_click_izs_zes(e):
         content_area.controls.clear()
-        show_energy_downlink(content_area, page)
+        show_energy_downlink(content_area, page, inputs  ,buttons_row1, EarthVisualization)
         page.update()
-
     def on_click_sppr(e):
         content_area.controls.clear()
-        show_desicion_support(content_area, page)
+        show_desicion_support(content_area, page, inputs)
         page.update()
 
     # Меню
@@ -488,27 +566,22 @@ def main(page: ft.Page):
             ]
         )
     )
-    footer = ft.Container(
-        content=ft.Text(
-            "© 2026 САПР VSAT. Система расчета спутниковых линий связи.",
-            color=COLORS["graphit"],
-            size=12,
-            text_align=ft.TextAlign.CENTER,
-        ),
-        padding=10,
-        bgcolor=COLORS["white"],  # по желанию
-    )
     page.add(
         ft.Column(
             [
                 menubar,
                 ft.Divider(height=2, thickness=1, color=COLORS["accent"]),
-                content_area
+                ft.Column(
+                    controls=[content_area],
+                    expand=True,
+                    scroll=ft.ScrollMode.AUTO,
+                ),
             ],
             expand=True,
             spacing=0
         )
     )
+
 
     on_click_sapr(None)
 

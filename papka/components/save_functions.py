@@ -1,107 +1,195 @@
-import flet as ft
-import math
 import os
-from openpyxl import Workbook
-from openpyxl.styles import Alignment as OpenPyXLAlignment, Border, Side
-from datetime import datetime
+import flet as ft
+
 from docx import Document
-from docx.shared import Pt  # Для работы с размерами шрифта
-from docx.enum.text import WD_PARAGRAPH_ALIGNMENT  # Для выравнивания текста
-from papka.ui  import gradys_d_input, gradys_sh_input, tochka_input, chastota_input, chastota1_input, diametr_input, k_input, P_input, T_input, p_input
-from papka.ui import create_input_field
-from .calculations import ygol_mesta, azimut, dalnost, poteri, factorG, atmosphere
-from .constants import R3, H, COLORS
-from papka.components.input_fields import *
-from papka.components.message import *
+from openpyxl import Workbook
+from openpyxl.styles import Alignment
 
-def save_result_txt(e):
+from papka.components.input_fields import Inputs
+from papka.components.notifications import show_notification
+from papka.components.constants import COLORS
+
+from .calculations import (
+    ygol_mesta,
+    azimut,
+    dalnost,
+    poteri,
+    factorG,
+    atmosphere,
+)
+
+
+# =====================================================
+# ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ
+# =====================================================
+
+def get_values(inputs: Inputs):
+    """Читает значения из Inputs"""
+
+    return dict(
+        gradys_d=float(inputs.gradys_d.value),
+        gradys_sh=float(inputs.gradys_sh.value),
+        tochka=float(inputs.tochka.value),
+        chastota=float(inputs.chastota.value),
+        diametr=float(inputs.diametr.value),
+        k=float(inputs.k.value),
+        P=float(inputs.P.value),
+        T=float(inputs.T.value),
+        p=float(inputs.p.value),
+    )
+
+
+# =====================================================
+# TXT
+# =====================================================
+
+def save_result_txt(page: ft.Page, inputs: Inputs):
+
     try:
-        gradys_d = float(gradys_d_input.value)
-        gradys_sh = float(gradys_sh_input.value)
-        tochka = float(tochka_input.value)
-        chastota = float(chastota_input.value)
-        diametr = float(diametr_input.value)
-        k = float(k_input.value)
-        P = float(P_input.value)
-        T = float(T_input.value)
-        p = float(p_input.value)
+        v = get_values(inputs)
 
-        angle_of_elevation = ygol_mesta(gradys_d, gradys_sh, tochka)
-        azimuth_angle = azimut(gradys_d, gradys_sh, tochka)
-        distance = dalnost(gradys_d, gradys_sh, tochka)
-        signal_loss = round(poteri(chastota, diametr, k, tochka), 3)
-        gain = round(factorG(chastota, k, diametr), 3)
-        atmos = round(atmosphere(chastota, gradys_d, gradys_sh, tochka, T, p, P), 3)
+        angle = ygol_mesta(v["gradys_d"], v["gradys_sh"], v["tochka"])
+        az = azimut(v["gradys_d"], v["gradys_sh"], v["tochka"])
+        dist = dalnost(v["gradys_d"], v["gradys_sh"], v["tochka"])
+
+        loss = round(poteri(v["chastota"], v["diametr"], v["k"], v["tochka"]), 3)
+        gain = round(factorG(v["chastota"], v["k"], v["diametr"]), 3)
+        atmos = round(
+            atmosphere(
+                v["chastota"],
+                v["gradys_d"],
+                v["gradys_sh"],
+                v["tochka"],
+                v["T"],
+                v["p"],
+                v["P"],
+            ),
+            3,
+        )
 
         result_text = f"""
-   ╔════════════════════════════════╗
-   ║       ОТЧЕТ О РАСЧЕТАХ        ║
-   ╠════════════════════════════════╣
-   ║  ВХОДНЫЕ ДАННЫЕ               ║
-   ║  • Широта: {gradys_sh:>12}°       ║
-   ║  • Долгота: {gradys_d:>11}°       ║
-   ║  • Точка стояния: {tochka:>6}°       ║
-   ║  • Диаметр антенны: {diametr:>5.2f} м     ║
-   ║  • Коэффициент: {k:>10.2f}       ║
-   ║  • Давление: {P:>11.2f} кПа    ║
-   ║  • Температура: {T:>8.2f} °K   ║
-   ║  • Влажность: {p:>10.2f} г/м³  ║
-   ╠════════════════════════════════╣
-   ║  РЕЗУЛЬТАТЫ                   ║
-   ║  • Угол места: {angle_of_elevation:>8.2f}°       ║
-   ║  • Азимут: {azimuth_angle:>12.2f}°       ║
-   ║  • Дальность: {distance:>10.2f} км     ║
-   ║  • Потери сигнала: {signal_loss:>6.2f} дБ ║
-   ║  • Потери в атмосфере: {atmos:>4.2f} дБ ║
-   ║  • Коэффициент усиления: {gain:>2.2f} дБ ║
-   ╚════════════════════════════════╝
-   """
+╔════════════════════════════════╗
+║        ОТЧЕТ О РАСЧЕТАХ        ║
+╠════════════════════════════════╣
+║ Угол места: {angle:.2f}°
+║ Азимут: {az:.2f}°
+║ Дальность: {dist:.2f} км
+║ Потери сигнала: {loss:.2f} дБ
+║ Потери атмосферы: {atmos:.2f} дБ
+║ Усиление антенны: {gain:.2f} дБ
+╚════════════════════════════════╝
+"""
 
-        with open("Результаты_Расчётов.txt", "w", encoding="utf-8") as file:
-            file.write(result_text)
+        with open("Результаты_Расчётов.txt", "w", encoding="utf-8") as f:
+            f.write(result_text)
 
-        show_save_message("Данные сохранены в Результаты_Расчётов.txt")
+        show_notification(page, "TXT файл успешно сохранён ✅")
 
     except ValueError:
-        show_save_message("Ошибка: проверьте корректность данных", is_error=True)
+        show_notification(page, "Ошибка: проверьте введённые данные", True)
 
-def save_result_to_word(e):
+
+# =====================================================
+# WORD
+# =====================================================
+
+def save_result_word(page: ft.Page, inputs: Inputs):
+
     try:
-        gradys_d = float(gradys_d_input.value)
-        gradys_sh = float(gradys_sh_input.value)
-        tochka = float(tochka_input.value)
+        v = get_values(inputs)
 
-        angle_of_elevation = ygol_mesta(gradys_d, gradys_sh, tochka)
-        azimuth_angle = azimut(gradys_d, gradys_sh, tochka)
-        distance = dalnost(gradys_d, gradys_sh, tochka)
+        angle = ygol_mesta(v["gradys_d"], v["gradys_sh"], v["tochka"])
+        az = azimut(v["gradys_d"], v["gradys_sh"], v["tochka"])
+        dist = dalnost(v["gradys_d"], v["gradys_sh"], v["tochka"])
 
-        result_text = f"""Результаты Вычислений:
-                  Ваши входные данные:
-                      Градусы широты: {gradys_sh}°
-                      Градусы Долготы: {gradys_d}°
-                      Значение Точки стояния спутника: {tochka}°
+        text = f"""
+Результаты вычислений
 
+Широта: {v["gradys_sh"]}
+Долгота: {v["gradys_d"]}
+Точка стояния: {v["tochka"]}
 
-                  Результаты Позиционирования:
-                      Угол места: {angle_of_elevation:.2f}°
-                      Азимут: {azimuth_angle:.2f}°
-                      Наклонная дальность: {distance:.2f} км
-                          ~~~~~~~~~~~~~~~~~~
-               Спасибо, что пользуетесь нашей системой расчётов!"""
+Угол места: {angle:.2f}°
+Азимут: {az:.2f}°
+Дальность: {dist:.2f} км
+"""
 
-        user_input = result_text
-
-        desktop_path = os.path.join(os.path.join(os.environ['USERPROFILE']), 'Desktop')
-        file_path = os.path.join(desktop_path, "output.docx")
+        desktop = os.path.join(os.path.expanduser("~"), "Desktop")
+        file_path = os.path.join(desktop, "output.docx")
 
         doc = Document()
-        doc.add_paragraph(user_input)
+        doc.add_paragraph(text)
         doc.save(file_path)
 
-        with open("Результаты_Расчётов.doc", "w") as file:
-            file.write(result_text)
-        show_save_message("Данные сохранены в файл Результаты_Расчётов.doc")
+        show_notification(page, "Word файл сохранён на рабочий стол ✅")
+
     except ValueError:
-        show_save_message("Пожалуйста, введите корректные данные", is_error=True)
+        show_notification(page, "Ошибка данных", True)
 
 
+# =====================================================
+# EXCEL
+# =====================================================
+
+def save_result_excel(page: ft.Page, inputs: Inputs):
+
+    try:
+        v = get_values(inputs)
+
+        dist = dalnost(v["gradys_d"], v["gradys_sh"], v["tochka"])
+        loss = round(poteri(v["chastota"], v["diametr"], v["k"], v["tochka"]), 3)
+
+        wb = Workbook()
+        ws = wb.active
+
+        ws["A1"] = "Параметр"
+        ws["B1"] = "Значение"
+
+        ws["A2"] = "Дальность"
+        ws["B2"] = dist
+
+        ws["A3"] = "Потери"
+        ws["B3"] = loss
+
+        for cell in ["A1", "B1", "A2", "B2", "A3", "B3"]:
+            ws[cell].alignment = Alignment(horizontal="center")
+
+        wb.save("Результаты_Расчётов.xlsx")
+
+        show_notification(page, "Excel файл сохранён ✅")
+
+    except ValueError:
+        show_notification(page, "Ошибка данных", True)
+
+
+# =====================================================
+# MENU BUTTON
+# =====================================================
+
+def create_save_menu(page: ft.Page, inputs: Inputs):
+
+    return ft.PopupMenuButton(
+        icon=ft.Icons.SAVE,
+        tooltip="Сохранить",
+        items=[
+            ft.PopupMenuItem(
+                text="TXT",
+                icon=ft.Icons.TEXT_SNIPPET,
+                on_click=lambda e: save_result_txt(page, inputs),
+            ),
+            ft.PopupMenuItem(
+                text="Word",
+                icon=ft.Icons.DESCRIPTION,
+                on_click=lambda e: save_result_word(page, inputs),
+            ),
+            ft.PopupMenuItem(
+                text="Excel",
+                icon=ft.Icons.TABLE_CHART,
+                on_click=lambda e: save_result_excel(page, inputs),
+            ),
+        ],
+        style=ft.ButtonStyle(
+            shape=ft.RoundedRectangleBorder(radius=12),
+            bgcolor=ft.Colors.WHITE,
+        ),
+    )

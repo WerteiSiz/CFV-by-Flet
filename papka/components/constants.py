@@ -1,3 +1,4 @@
+import flet as ft
 # Глобальные параметры
 R3 = 6378.0
 H = 35810.0
@@ -15,4 +16,14 @@ COLORS = {
     "blue": "#2592f3",
     "light_blue":"#60a5fa"
 }
-
+footer = ft.Container(
+        content=ft.Text(
+            "© 2026 САПР VSAT. Система расчета спутниковых линий связи.",
+            color=COLORS["graphit"],
+            size=12,
+            text_align=ft.TextAlign.CENTER,
+        ),
+        padding=10,
+        bgcolor=COLORS["white"],
+        alignment=ft.alignment.center,
+    )
